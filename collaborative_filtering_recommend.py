@@ -9,7 +9,7 @@ from numpy import random,mat
 import pandas as pd
 import time
 from math import *
-
+#
 Xtrain = pd.read_csv('Xtrain.csv')
 Xtest = pd.read_csv('Xtest_2.csv')
 
@@ -45,8 +45,8 @@ Xtrain_data = Xtrain_tmp[:,1:]  # 去掉第一列
 Xtest_data = Xtest_tmp[:,1:]    # 行号代表user  
 Xtrain_data_mat = mat(Xtrain_data)   # ndarrray 转换成 matrix
 Xtest_data_mat = mat(Xtest_data)
-np.savetxt('Xtrain_data_mat.txt', Xtrain_data_mat, delimiter=' ')   # 保存
-np.savetxt('Xtest_data_mat.txt', Xtest_data_mat, delimiter=' ')   # 保存
+#np.savetxt('Xtrain_data_mat.txt', Xtrain_data_mat, delimiter=' ')   # 保存
+#np.savetxt('Xtest_data_mat.txt', Xtest_data_mat, delimiter=' ')   # 保存
 
 
 # 两个矩阵计算相似度，按行计算相似度
@@ -54,50 +54,56 @@ np.savetxt('Xtest_data_mat.txt', Xtest_data_mat, delimiter=' ')   # 保存
 # 返回值RES为A矩阵每行对B矩阵每行的向量余弦值
 # RES[i,j] 表示A矩阵第i行向量和B矩阵第j行向量余弦相似度
 
+
+#Xtrain_data_mat = np.loadtxt("Xtrain_data_mat.txt",delimiter=' ')
+#Xtest_data_mat = np.loadtxt("Xtest_data_mat.txt",delimiter=' ')
+start = time.time()
+#
+#start = time.time()
+#
 def cosine_Matrix(_matrixA,_matrixB):
     # 乘以转置 点积
     _matrixA_matrixB = _matrixA * _matrixB.transpose()
     # 按行求和，生成一个列向量，即各行向量的模
+    
     _matrixA_norm = np.sqrt(np.multiply(_matrixA,_matrixA).sum(axis=1))
     _matrixB_norm = np.sqrt(np.multiply(_matrixB,_matrixB).sum(axis=1))
     return np.divide(_matrixA_matrixB, _matrixA_norm * _matrixB_norm.transpose())
 
 # 向量计算余弦相似度
-def cosine(_vec1,_vec2):
-    return float(np.sum(_vec1 * _vec2))/(np.linalg.norm(_vec1) * np.linalg.norm(_vec2))
-
-
+#def cosine(_vec1,_vec2):
+#    return float(np.sum(_vec1 * _vec2))/(np.linalg.norm(_vec1) * np.linalg.norm(_vec2))
 
 COSINE_MATRIX = np.zeros((10000,10000))
 COSINE_MATRIX = cosine_Matrix(Xtrain_data_mat,Xtrain_data_mat)
-np.savetxt('COSINE_MATRIX.txt', COSINE_MATRIX, delimiter=' ')   # 保存
+
+#np.savetxt('COSINE_MATRIX.txt', COSINE_MATRIX, delimiter=' ')   # 保存
 
 # 对角元素变为0
 for i in range(10000):
     COSINE_MATRIX[i,i] = 0
-np.savetxt('COSINE_MATRIX_2.txt', COSINE_MATRIX, delimiter=' ')
-
-#  读取相似度矩阵txt文件
-
-
-#Xtrain_data_mat = np.loadtxt("Xtrain_data_mat.txt",delimiter=' ')
-#Xtest_data_mat = np.loadtxt("Xtest_data_mat.txt",delimiter=' ')
+#np.savetxt('COSINE_MATRIX_2.txt', COSINE_MATRIX, delimiter=' ')
 #
+##  读取相似度矩阵txt文件
+#
+#start = time.time()
 #COSINE_MATRIX = np.loadtxt("COSINE_MATRIX_2.txt",delimiter=' ')
-    
-Numerator = COSINE_MATRIX * Xtrain_data_mat.T    # 分子
+#Numerator = COSINE_MATRIX * Xtrain_data_mat.T    # 分子
+Numerator  = np.dot(COSINE_MATRIX , Xtrain_data_mat.T)
+COSINE_MATRIX[Xtrain_data_mat == 0] = 0   # 用户对电影未评分，相似度应为0，权重置为0
 Denominator = COSINE_MATRIX.sum(axis=1)   # 分母，是一个一维向量
- 
+
 SCORE_predict = np.divide(Numerator.T,Denominator)
 SCORE_predict = SCORE_predict.T    # 预测得分
-np.savetxt('SCORE_predict_1.txt', SCORE_predict, delimiter=' ')   # 保存
+#np.savetxt('SCORE_predict_1.txt', SCORE_predict, delimiter=' ')   # 保存
 
 # 计算rmse
+SCORE_predict[Xtest_data_mat == 0] = 0 #  测试集中为0的数据，不进行预测相减
 error = SCORE_predict - Xtest_data_mat   # 求差值
-S_error = np.square(error)   # 求平方
-sum_S_error = S_error.sum(axis = 1)   # 按行求和
-RMSE = np.sqrt(1/(10000*10000) * S_error.sum())   # 求和取平均开方
+RMSE = 1/10000 * (np.linalg.norm(error,ord='fro'))
+end = time.time()
 print('RMSE:',RMSE)
+print('Time cost:',end-start)
 
 
 
